@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Analytics Dashboard</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    
+    <style>
+        body { background-color: #f0f2f5; margin: 0; padding: 0; }
+        #loading { 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; font-family: sans-serif; color: #a361a5; 
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Initialising Dashboard Engine...</div>
+
+    <div id="dash-app"></div>
+
+    <py-config>
+        packages = [
+            "dash",
+            "dash-bootstrap-components",
+            "plotly",
+            "pandas",
+            "numpy"
+        ]
+    </py-config>
+
+    <script type="py" target="dash-app">
+        import dash
+        from dash import dcc, html
+        import dash_bootstrap_components as dbc
+        import plotly.graph_objects as go
+        import plotly.express as px
+        import pandas as pd
+        import numpy as np
+        from js import document
+
+        # Remove loading text once Python starts
+        document.getElementById("loading").style.display = "none"
+
+        # --- YOUR DATA & CONFIGURATION ---
+        COLORS = {
+            "female": "#f1aed5", 
+            "male": "#9ec5f7", 
+            "nb": "#d1e7dd", 
+            "theme_dark": "#a361a5", 
+            "text_dark": "#2c3e50",
+            "text_muted": "#5a6782"
+        }
+
+        retention_matrix = np.array([
+            [100, 93.4, 75.0, 59.5, 48.1, 40.8, 33.5, 30.1, 27.2, 23.7, 19.3, 17.4],
+            [100, 89.3, 68.0, 55.2, 44.1, 35.2, 28.8, 23.5, 19.9, 18.9, 16.7, np.nan],
+            [100, 89.4, 69.2, 57.4, 46.2, 36.9, 31.4, 25.6, 20.8, 17.9, np.nan, np.nan],
+            [100, 90.6, 70.6, 54.4, 47.2, 39.1, 33.4, 28.8, 24.1, np.nan, np.nan, np.nan],
+            [100, 88.6, 71.1, 55.3, 44.7, 39.7, 32.2, 26.4, np.nan, np.nan, np.nan, np.nan],
+            [100, 89.2, 72.6, 57.8, 47.9, 41.0, 33.0, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [100, 85.0, 68.1, 53.6, 44.0, 36.0, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [100, 90.7, 70.8, 53.8, 44.0, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [100, 88.8, 70.9, 57.7, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [100, 88.4, 69.4, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [100, 87.1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [100, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        ])
+
+        cohort_labels = ["J 316", "F 281", "M 312", "A 320", "M 360", "J 351", "J 386", "A 366", "S 385", "O 421", "N 388", "D 435"]
+        gender_df = pd.DataFrame({"Gender": ["F", "M", "NB"], "Users": [36, 30, 11]})
+        total_users = gender_df['Users'].sum()
+        age_df = pd.DataFrame({"Age": ["18-24", "25-34", "35-44", "45-54", "55+"], "Users": [12, 21, 23, 11, 10]})
+        country_df = pd.DataFrame({
+            "Country": ["United Kingdom", "Germany", "Italy", "France", "Spain", "Austria", "Switzerland", "Sweden", "Poland", "Netherlands", "Norway", "Belgium", "Portugal", "Finland", "Denmark"],
+            "Users": [13, 13, 8, 7, 6, 5, 4, 4, 4, 4, 3, 3, 1, 1, 1]
+        }).sort_values("Users", ascending=True)
+
+        country_df['Percentage'] = (country_df['Users'] / total_users * 100).round(1)
+        country_df['FormattedLabel'] = country_df.apply(lambda x: f"<b>{x['Percentage']}%</b> &nbsp; ({int(x['Users'])})", axis=1)
+
+        months_numeric = list(range(12))
+        month_labels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
+        churn_base = [25, 28, 24, 26, 22, 25, 24, 27, 25, 30, 24, 26]
+        churn_prem = [15, 16, 14, 15, 14, 16, 15, 17, 16, 18, 17, 12]
+
+        def gender_legend_row(label, icon, percentage, count, color):
+            return dbc.Row([
+                dbc.Col(html.Span(label, className="fw-bold text-muted"), width=2),
+                dbc.Col(html.Div(icon, style={
+                    "border": f"2px solid {color}44", "borderRadius": "50%", 
+                    "width": "30px", "height": "30px", "display": "flex", 
+                    "alignItems": "center", "justifyContent": "center",
+                    "color": color, "fontSize": "18px", "backgroundColor": f"{color}11"
+                }), width=2),
+                dbc.Col([
+                    html.Div(f"{percentage}%", className="fw-bold", style={"color": COLORS["text_dark"], "fontSize": "15px", "lineHeight": "1.1"}),
+                    html.Div(f"({count} users)", className="text-muted", style={"fontSize": "11px"})
+                ], width=8)
+            ], className="align-items-center mb-3 g-0")
+
+        app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+        # --- FIGURES ---
+        gender_fig = px.pie(gender_df, values='Users', names='Gender', hole=.78, color_discrete_sequence=[COLORS["female"], COLORS["male"], COLORS["nb"]])
+        gender_fig.update_layout(showlegend=False, margin=dict(t=10, b=10, l=10, r=10), height=180, annotations=[dict(text='Total<br><span style="font-size:20px; color:#2c3e50">77</span>', x=0.5, y=0.5, showarrow=False, font_color=COLORS["text_muted"])])
+
+        churn_fig = go.Figure()
+        churn_fig.add_trace(go.Scatter(x=months_numeric, y=churn_base, name="Base", mode='lines+markers', line=dict(color=COLORS["female"], width=3)))
+        churn_fig.add_trace(go.Scatter(x=months_numeric, y=churn_prem, name="Premium", mode='lines+markers', line=dict(color=COLORS["theme_dark"], width=3)))
+        churn_fig.update_layout(xaxis=dict(tickmode='array', tickvals=months_numeric, ticktext=month_labels, showgrid=False), yaxis=dict(showgrid=False, zeroline=False), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), margin=dict(t=30, b=20, l=20, r=20), height=220, plot_bgcolor='white')
+
+        age_fig = px.bar(age_df, x='Age', y='Users', text='Users', color_discrete_sequence=[COLORS["theme_dark"]])
+        age_fig.update_traces(textposition='outside', textfont=dict(color=COLORS["theme_dark"], size=12), width=0.2, cliponaxis=False)
+        age_fig.update_layout(xaxis_title=None, yaxis_visible=False, margin=dict(t=30, b=0, l=0, r=0), height=150, plot_bgcolor='rgba(0,0,0,0)')
+
+        country_fig = px.bar(country_df, x='Users', y='Country', orientation='h', text='FormattedLabel', color_discrete_sequence=[COLORS["theme_dark"]])
+        country_fig.update_traces(textposition='outside', textfont=dict(size=12, color=COLORS["text_dark"]), cliponaxis=False, width=0.5, marker_line_width=0)
+        country_fig.update_layout(xaxis_visible=False, yaxis=dict(showgrid=False, showline=False, zeroline=False, tickfont=dict(color=COLORS["text_muted"], size=11)), margin=dict(t=10, b=10, l=0, r=100), height=450, plot_bgcolor='rgba(0,0,0,0)')
+
+        retention_fig = go.Figure(data=go.Heatmap(z=retention_matrix, x=[str(i) for i in range(12)], y=cohort_labels, colorscale=[[0, "#fcf7fc"], [1, COLORS["theme_dark"]]], showscale=False, xgap=1, ygap=1, text=retention_matrix, texttemplate="%{text:.1f}%", textfont={"size": 10, "color": "white"}, hoverinfo="z"))
+        retention_fig.update_layout(margin=dict(t=30, b=10, l=20, r=20), height=350, yaxis=dict(autorange="reversed", showgrid=False, tickfont=dict(size=11, color=COLORS["text_muted"])), xaxis=dict(side="top", showgrid=False, tickfont=dict(size=11)), plot_bgcolor='white')
+
+        # --- APP LAYOUT ---
+        app.layout = dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    dbc.Card(dbc.CardBody([
+                        html.H6("DEMOGRAPHIC", className="fw-bold small mb-4"),
+                        html.P("Gender", className="small fw-bold mb-3", style={"color": COLORS["text_muted"]}),
+                        dbc.Row([
+                            dbc.Col(dcc.Graph(figure=gender_fig, config={'displayModeBar': False}), width=5),
+                            dbc.Col([
+                                gender_legend_row("F", "♀", "46.8", "36", COLORS["female"]),
+                                gender_legend_row("M", "♂", "39.0", "30", COLORS["male"]),
+                                gender_legend_row("NB", "⚧", "14.3", "11", COLORS["nb"]),
+                            ], width=7, className="ps-3"),
+                        ], className="align-items-center mb-4"),
+                        html.P("Age", className="small fw-bold mb-1"),
+                        dcc.Graph(figure=age_fig, config={'displayModeBar': False}),
+                        html.P("Country (where users are coming from)", className="mt-4 small fw-bold"),
+                        dcc.Graph(figure=country_fig, config={'displayModeBar': False})
+                    ]), className="border-0 shadow-sm rounded-3")
+                ], width=5),
+                dbc.Col([
+                    dbc.Card(dbc.CardBody([
+                        html.H6("MONTHLY CHURN RATE", className="fw-bold small mb-2"),
+                        dcc.Graph(figure=churn_fig, config={'displayModeBar': False}),
+                        html.H6("COHORT RETENTION", className="fw-bold small mt-4 mb-2"),
+                        dcc.Graph(figure=retention_fig, config={'displayModeBar': False})
+                    ]), className="border-0 shadow-sm rounded-3")
+                ], width=7)
+            ], className="g-3 mt-3")
+        ], fluid=True, style={"backgroundColor": "#f0f2f5", "minHeight": "100vh", "paddingBottom": "40px"})
+
+        # Run with PyScript's internal server logic
+        app.run_server()
+    </script>
+</body>
+</html>
