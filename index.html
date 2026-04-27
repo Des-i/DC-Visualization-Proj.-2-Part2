@@ -182,25 +182,18 @@
         [100, null, null, null, null, null, null, null, null, null, null, null]
     ];
     
-    const cohortLabels = ["J 316", "F 281", "M 312", "A 320", "M 360", "J 351", "J 386", "A 366", "S 385", "O 421", "N 388", "D 435"];
-
     Plotly.newPlot('retention-heatmap', [{
         z: retentionMatrix,
-        x: Array.from({length: 12}, (_, i) => i.toString()),
-        y: cohortLabels,
+        x: ["0","1","2","3","4","5","6","7","8","9","10","11"],
+        y: ["J 316", "F 281", "M 312", "A 320", "M 360", "J 351", "J 386", "A 366", "S 385", "O 421", "N 388", "D 435"],
         type: 'heatmap',
         colorscale: [[0, "#fcf7fc"], [1, COLORS.theme]],
         showscale: false,
         text: retentionMatrix.map(row => row.map(v => v ? v.toFixed(1) + '%' : '')),
         texttemplate: "%{text}",
-        textfont: { size: 10, color: 'black' },
-        xgap: 1, ygap: 1,
-        hoverinfo: 'z'
-    }], {
-        height: 380, margin: {t:30,b:10,l:60,r:20},
-        yaxis: { autorange: 'reversed', tickfont: {size: 10}, fixedrange: true },
-        xaxis: { side: 'top', fixedrange: true, showgrid: false }
-    }, {displayModeBar: false});
+        textfont: { size: 10, color: '#000000' },
+        xgap: 1, ygap: 1
+    }], { height: 380, margin: {t:30,b:10,l:60,r:20}, yaxis: {autorange: 'reversed'}, xaxis: {side: 'top'} }, {displayModeBar: false});
 </script>
 
 </body>
