@@ -9,12 +9,12 @@
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding-bottom: 40px; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: white; }
-        .section-title { font-size: 0.85rem; font-weight: 700; color: #2c3e50; text-transform: uppercase; letter-spacing: 0.5px; }
-        .label-muted { color: #5a6782; font-size: 0.9rem; font-weight: 600; }
         .gender-icon {
             width: 32px; height: 32px; border-radius: 50%; display: flex;
             align-items: center; justify-content: center; font-size: 18px;
         }
+        .section-title { font-size: 0.85rem; font-weight: 700; color: #2c3e50; text-transform: uppercase; letter-spacing: 0.5px; }
+        .label-muted { color: #5a6782; font-size: 0.9rem; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -70,6 +70,7 @@
             <div class="card p-4 h-100">
                 <h6 class="section-title mb-2">Monthly Churn Rate</h6>
                 <div id="churn-line"></div>
+                
                 <h6 class="section-title mt-5 mb-2">Cohort Retention</h6>
                 <div id="retention-heatmap"></div>
             </div>
@@ -79,13 +80,14 @@
 
 <script>
     const COLORS = { 
-        theme: "#a361a5", 
         female: "#f1aed5", 
         male: "#9ec5f7", 
-        nb: "#d1e7dd" 
+        nb: "#d1e7dd", 
+        theme: "#a361a5",
+        textDark: "#2c3e50"
     };
 
-    // 1. Gender Pie (Re-added)
+    // 1. Gender Pie
     Plotly.newPlot('gender-pie', [{
         values: [36, 30, 11],
         labels: ['F', 'M', 'NB'],
@@ -108,22 +110,63 @@
         textposition: 'outside',
         marker: { color: COLORS.theme },
         width: 0.3
-    }], { height: 160, margin: {t:30,b:30,l:0,r:0}, xaxis: {showgrid: false}, yaxis: {visible: false} }, {displayModeBar: false});
+    }], {
+        height: 160, margin: {t:30,b:30,l:0,r:0},
+        xaxis: { showgrid: false, fixedrange: true },
+        yaxis: { visible: false, fixedrange: true },
+        plot_bgcolor: 'rgba(0,0,0,0)', paper_bgcolor: 'rgba(0,0,0,0)'
+    }, {displayModeBar: false});
 
     // 3. Country Bar
+    const countries = ["Denmark", "Finland", "Portugal", "Belgium", "Norway", "Netherlands", "Poland", "Sweden", "Switzerland", "Austria", "Spain", "France", "Italy", "Germany", "United Kingdom"];
+    const countryVals = [1, 1, 1, 3, 3, 4, 4, 4, 4, 5, 6, 7, 8, 13, 13];
     Plotly.newPlot('country-bar', [{
-        x: [1, 1, 1, 3, 3, 4, 4, 4, 4, 5, 6, 7, 8, 13, 13],
-        y: ["Denmark", "Finland", "Portugal", "Belgium", "Norway", "Netherlands", "Poland", "Sweden", "Switzerland", "Austria", "Spain", "France", "Italy", "Germany", "United Kingdom"],
-        type: 'bar', orientation: 'h', marker: { color: COLORS.theme }
-    }], { height: 450, margin: {t:10,b:10,l:110,r:80}, xaxis: {visible: false}, yaxis: {showgrid: false} }, {displayModeBar: false});
+        x: countryVals,
+        y: countries,
+        type: 'bar',
+        orientation: 'h',
+        text: countryVals.map(v => `<b>${(v/77*100).toFixed(1)}%</b> (${v})`),
+        textposition: 'outside',
+        marker: { color: COLORS.theme },
+        width: 0.6
+    }], {
+        height: 450, margin: {t:10,b:10,l:110,r:80},
+        xaxis: { visible: false, fixedrange: true },
+        yaxis: { showgrid: false, tickfont: {size: 11}, fixedrange: true },
+        plot_bgcolor: 'rgba(0,0,0,0)', paper_bgcolor: 'rgba(0,0,0,0)'
+    }, {displayModeBar: false});
 
-    // 4. Churn Line
+    // 4. Churn Line (FIXED: Non-grouping X-Axis)
+    const monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+    const monthIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    
     Plotly.newPlot('churn-line', [
-        { x: [0,1,2,3,4,5,6,7,8,9,10,11], y: [25, 28, 24, 26, 22, 25, 24, 27, 25, 30, 24, 26], name: 'Base', mode: 'lines+markers', line: {color: COLORS.female, width:3} },
-        { x: [0,1,2,3,4,5,6,7,8,9,10,11], y: [15, 16, 14, 15, 14, 16, 15, 17, 16, 18, 17, 12], name: 'Premium', mode: 'lines+markers', line: {color: COLORS.theme, width:3} }
-    ], { height: 250, margin: {t:40,b:40,l:40,r:20}, xaxis: { tickvals: [0,1,2,3,4,5,6,7,8,9,10,11], ticktext: ["J","F","M","A","M","J","J","A","S","O","N","D"], showgrid: false } }, {displayModeBar: false});
+        { 
+            x: monthIndices, 
+            y: [25, 28, 24, 26, 22, 25, 24, 27, 25, 30, 24, 26], 
+            name: 'Base', mode: 'lines+markers', 
+            line: {color: COLORS.female, width:3}, marker: {size: 8} 
+        },
+        { 
+            x: monthIndices, 
+            y: [15, 16, 14, 15, 14, 16, 15, 17, 16, 18, 17, 12], 
+            name: 'Premium', mode: 'lines+markers', 
+            line: {color: COLORS.theme, width:3}, marker: {size: 8} 
+        }
+    ], {
+        height: 250, margin: {t:40,b:40,l:40,r:20},
+        legend: { orientation: 'h', x: 1, y: 1.15, xanchor: 'right' },
+        xaxis: { 
+            tickmode: 'array', 
+            tickvals: monthIndices, 
+            ticktext: monthLabels, 
+            showgrid: false,
+            fixedrange: true 
+        }, 
+        yaxis: { showgrid: false, fixedrange: true, zeroline: false }
+    }, {displayModeBar: false});
 
-    // 5. Heatmap
+    // 5. Retention Heatmap (FIXED: Complete Data & Text Contrast)
     const retentionMatrix = [
         [100, 93.4, 75.0, 59.5, 48.1, 40.8, 33.5, 30.1, 27.2, 23.7, 19.3, 17.4],
         [100, 89.3, 68.0, 55.2, 44.1, 35.2, 28.8, 23.5, 19.9, 18.9, 16.7, null],
@@ -138,19 +181,27 @@
         [100, 87.1, null, null, null, null, null, null, null, null, null, null],
         [100, null, null, null, null, null, null, null, null, null, null, null]
     ];
+    
+    const cohortLabels = ["J 316", "F 281", "M 312", "A 320", "M 360", "J 351", "J 386", "A 366", "S 385", "O 421", "N 388", "D 435"];
 
     Plotly.newPlot('retention-heatmap', [{
         z: retentionMatrix,
-        x: ["0","1","2","3","4","5","6","7","8","9","10","11"],
-        y: ["J 316", "F 281", "M 312", "A 320", "M 360", "J 351", "J 386", "A 366", "S 385", "O 421", "N 388", "D 435"],
+        x: Array.from({length: 12}, (_, i) => i.toString()),
+        y: cohortLabels,
         type: 'heatmap',
         colorscale: [[0, "#fcf7fc"], [1, COLORS.theme]],
         showscale: false,
         text: retentionMatrix.map(row => row.map(v => v ? v.toFixed(1) + '%' : '')),
         texttemplate: "%{text}",
-        textfont: { size: 10, color: '#000000' },
-        xgap: 1, ygap: 1
-    }], { height: 380, margin: {t:30,b:10,l:60,r:20}, yaxis: {autorange: 'reversed'}, xaxis: {side: 'top'} }, {displayModeBar: false});
+        textfont: { size: 10, color: 'black' },
+        xgap: 1, ygap: 1,
+        hoverinfo: 'z'
+    }], {
+        height: 380, margin: {t:30,b:10,l:60,r:20},
+        yaxis: { autorange: 'reversed', tickfont: {size: 10}, fixedrange: true },
+        xaxis: { side: 'top', fixedrange: true, showgrid: false }
+    }, {displayModeBar: false});
 </script>
+
 </body>
 </html>
