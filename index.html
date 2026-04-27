@@ -72,14 +72,9 @@
 </div>
 
 <script>
-    // Constants
     const COLORS = {
-        female: "#f1aed5",
-        male: "#9ec5f7",
-        nb: "#d1e7dd",
-        theme: "#a361a5",
-        text: "#2c3e50",
-        muted: "#5a6782"
+        female: "#f1aed5", male: "#9ec5f7", nb: "#d1e7dd",
+        theme: "#a361a5", text: "#2c3e50", muted: "#5a6782"
     };
 
     // 1. Gender Pie Chart
@@ -89,8 +84,7 @@
         type: 'pie',
         hole: 0.78,
         marker: { colors: [COLORS.female, COLORS.male, COLORS.nb] },
-        showlegend: false,
-        hoverinfo: 'label+percent'
+        showlegend: false
     }], {
         height: 180, margin: {t: 0, b: 0, l: 0, r: 0},
         annotations: [{ text: 'Total<br><span style="font-size:20px; color:#2c3e50">77</span>', x: 0.5, y: 0.5, showarrow: false }]
@@ -107,18 +101,14 @@
         width: 0.3
     }], {
         height: 150, margin: {t: 30, b: 20, l: 0, r: 0},
-        xaxis: { showgrid: false },
-        yaxis: { visible: false }
+        xaxis: { showgrid: false }, yaxis: { visible: false }
     }, {displayModeBar: false});
 
     // 3. Country Bar Chart
     const countries = ["Portugal", "Finland", "Denmark", "Belgium", "Norway", "Poland", "Netherlands", "Sweden", "Switzerland", "Austria", "France", "Spain", "Italy", "Germany", "United Kingdom"];
     const countryUsers = [1, 1, 1, 3, 3, 4, 4, 4, 4, 5, 7, 6, 8, 13, 13];
     Plotly.newPlot('country-bar', [{
-        x: countryUsers,
-        y: countries,
-        type: 'bar',
-        orientation: 'h',
+        x: countryUsers, y: countries, type: 'bar', orientation: 'h',
         marker: { color: COLORS.theme },
         text: countryUsers.map(u => `<b>${(u/77*100).toFixed(1)}%</b> (${u})`),
         textposition: 'outside'
@@ -128,33 +118,37 @@
         yaxis: { showgrid: false, tickfont: {size: 11, color: COLORS.muted} }
     }, {displayModeBar: false});
 
-    // 4. FIXED: Churn Line Chart (Handling duplicate month labels)
-    const monthIndices = [0,1,2,3,4,5,6,7,8,9,10,11];
-    const monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+    // 4. CHURN LINE CHART - FORCED UNIQUE AXIS
+    const indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     
-    Plotly.newPlot('churn-line', [
-        { 
-            x: monthIndices, 
-            y: [25, 28, 24, 26, 22, 25, 24, 27, 25, 30, 24, 26], 
-            name: 'Base', 
-            mode: 'lines+markers',
-            line: {color: COLORS.female, width: 3} 
-        },
-        { 
-            x: monthIndices, 
-            y: [15, 16, 14, 15, 14, 16, 15, 17, 16, 18, 17, 12], 
-            name: 'Premium', 
-            mode: 'lines+markers',
-            line: {color: COLORS.theme, width: 3} 
-        }
-    ], {
+    const traceBase = {
+        x: indices,
+        y: [25, 28, 24, 26, 22, 25, 24, 27, 25, 30, 24, 26],
+        name: 'Base',
+        type: 'scatter',
+        mode: 'lines+markers',
+        line: {color: COLORS.female, width: 3}
+    };
+
+    const tracePremium = {
+        x: indices,
+        y: [15, 16, 14, 15, 14, 16, 15, 17, 16, 18, 17, 12],
+        name: 'Premium',
+        type: 'scatter',
+        mode: 'lines+markers',
+        line: {color: COLORS.theme, width: 3}
+    };
+
+    Plotly.newPlot('churn-line', [traceBase, tracePremium], {
         height: 220, margin: {t: 30, b: 20, l: 30, r: 20},
         legend: { orientation: 'h', y: 1.1, x: 1, xanchor: 'right' },
         xaxis: { 
             tickmode: 'array',
-            tickvals: monthIndices,
-            ticktext: monthLabels,
-            showgrid: false 
+            tickvals: indices,
+            ticktext: labels, // Jan, Feb, Mar instead of J, F, M to ensure no browser confusion
+            showgrid: false,
+            zeroline: false
         },
         yaxis: { showgrid: false, zeroline: false }
     }, {displayModeBar: false});
@@ -178,13 +172,13 @@
     
     Plotly.newPlot('retention-heatmap', [{
         z: matrix,
-        x: Array.from({length: 12}, (_, i) => i.toString()),
+        x: indices.map(String),
         y: cohorts,
         type: 'heatmap',
         colorscale: [[0, '#fcf7fc'], [1, COLORS.theme]],
         showscale: false,
         xgap: 1, ygap: 1,
-        text: matrix.map(row => row.map(val => val ? val.toFixed(1) + '%' : '')),
+        text: matrix.map(row => row.map(v => v ? v.toFixed(1) + '%' : '')),
         texttemplate: '%{text}',
         textfont: { size: 10, color: 'white' }
     }], {
