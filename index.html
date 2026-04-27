@@ -136,7 +136,7 @@
         plot_bgcolor: 'rgba(0,0,0,0)', paper_bgcolor: 'rgba(0,0,0,0)'
     }, {displayModeBar: false});
 
-    // 4. Churn Line
+    // 4. Churn Line (FIXED: Non-grouping X-Axis)
     const monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
     const monthIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     
@@ -166,7 +166,7 @@
         yaxis: { showgrid: false, fixedrange: true, zeroline: false }
     }, {displayModeBar: false});
 
-    // 5. Retention Heatmap
+    // 5. Retention Heatmap (FIXED: Complete Data & Text Contrast)
     const retentionMatrix = [
         [100, 93.4, 75.0, 59.5, 48.1, 40.8, 33.5, 30.1, 27.2, 23.7, 19.3, 17.4],
         [100, 89.3, 68.0, 55.2, 44.1, 35.2, 28.8, 23.5, 19.9, 18.9, 16.7, null],
@@ -186,22 +186,18 @@
 
     Plotly.newPlot('retention-heatmap', [{
         z: retentionMatrix,
-        x: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+        x: Array.from({length: 12}, (_, i) => i.toString()),
         y: cohortLabels,
         type: 'heatmap',
         colorscale: [[0, "#fcf7fc"], [1, COLORS.theme]],
         showscale: false,
-        // Ensure text is calculated for every cell
-        text: retentionMatrix.map(row => row.map(v => (v !== null) ? v.toFixed(1) + '%' : '')),
+        text: retentionMatrix.map(row => row.map(v => v ? v.toFixed(1) + '%' : '')),
         texttemplate: "%{text}",
-        // Force text font to be visible
-        textfont: { family: 'Arial', size: 9, color: 'black' },
-        xgap: 1, 
-        ygap: 1,
+        textfont: { size: 10, color: 'black' },
+        xgap: 1, ygap: 1,
         hoverinfo: 'z'
     }], {
-        height: 380, 
-        margin: {t:30, b:10, l:60, r:20},
+        height: 380, margin: {t:30,b:10,l:60,r:20},
         yaxis: { autorange: 'reversed', tickfont: {size: 10}, fixedrange: true },
         xaxis: { side: 'top', fixedrange: true, showgrid: false }
     }, {displayModeBar: false});
